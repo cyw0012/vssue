@@ -2,6 +2,9 @@
 
 基于本地人脸特征的人脸录入、管理与识别演示项目：后端使用 **FastAPI** 提供 REST 与 WebSocket，前端为单页 **HTML/CSS/JavaScript**，通过浏览器摄像头与接口完成录入与实时识别。
 
+运行main.py，然后浏览器打开访问 http://127.0.0.1:8000，如图所示：
+![image](pic.png)
+
 ---
 
 ## 技术栈
