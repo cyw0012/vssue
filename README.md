@@ -1,2 +1,0 @@
-# vssue
-vuepress vssue
