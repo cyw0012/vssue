@@ -1,4 +1,4 @@
-# 人脸识别系统（Face Identify）
+# 前后端人脸识别系统（Face Identify）
 
 基于本地人脸特征的人脸录入、管理与识别演示项目：后端使用 **FastAPI** 提供 REST 与 WebSocket，前端为单页 **HTML/CSS/JavaScript**，通过浏览器摄像头与接口完成录入与实时识别。
 
