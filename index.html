@@ -1,0 +1,1179 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>人脸识别系统</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --primary: #2d6cff;
+      --primary-strong: #1f53d8;
+      --text: #222b45;
+      --muted: #6c7a92;
+      --line: #e8edf5;
+      --danger: #d83f57;
+      --success: #1f9d63;
+      --shadow: 0 12px 30px rgba(31, 51, 87, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(140deg, #eef3ff 0%, var(--bg) 45%, #eff8f4 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      background: #0f1b34;
+      color: #d7e2ff;
+      padding: 24px 18px;
+      box-shadow: 2px 0 24px rgba(9, 19, 40, 0.25);
+    }
+
+    .brand {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      letter-spacing: 0.5px;
+    }
+
+    .tab-btn {
+      width: 100%;
+      border: 0;
+      color: #d7e2ff;
+      background: transparent;
+      text-align: left;
+      padding: 12px 14px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover, .tab-btn.active {
+      background: rgba(106, 145, 255, 0.2);
+      color: #ffffff;
+      transform: translateX(2px);
+    }
+
+    .main {
+      padding: 26px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 20px;
+      margin-bottom: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.7);
+    }
+
+    .title {
+      margin: 0 0 16px;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .sub-title {
+      margin: 0 0 10px;
+      font-size: 16px;
+      color: var(--muted);
+    }
+
+    .hidden { display: none !important; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .form-row { margin-bottom: 12px; }
+    label { display: block; font-size: 14px; margin-bottom: 6px; color: var(--muted); }
+    input, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 14px;
+      outline: none;
+      background: #fff;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(45, 108, 255, 0.12);
+    }
+
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all .15s ease;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-strong); }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-secondary { background: #eef2ff; color: #2d4c95; }
+
+    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .message {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      white-space: pre-wrap;
+    }
+    .msg-ok { background: #e7f8ef; color: #14613d; border: 1px solid #c6ecd6; }
+    .msg-err { background: #ffecef; color: #8e1f35; border: 1px solid #ffc5d1; }
+
+    .camera-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 560px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: #111;
+    }
+    video, canvas { width: 100%; height: auto; display: block; }
+    canvas.overlay {
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .preview-img {
+      width: 100%;
+      max-width: 280px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      object-fit: cover;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 8px;
+      text-align: left;
+      vertical-align: middle;
+    }
+    th { color: var(--muted); font-weight: 600; background: #fafcff; }
+    .avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 1px solid var(--line);
+    }
+    .avatar.clickable { cursor: zoom-in; }
+
+    .image-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 16, 32, 0.72);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 24px;
+    }
+    .image-modal-content {
+      position: relative;
+      max-width: min(900px, 92vw);
+      max-height: 88vh;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+      background: #fff;
+    }
+    .image-modal-content img {
+      display: block;
+      max-width: 100%;
+      max-height: 88vh;
+      object-fit: contain;
+    }
+    .image-modal-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      border: 0;
+      border-radius: 999px;
+      width: 34px;
+      height: 34px;
+      cursor: pointer;
+      font-size: 20px;
+      line-height: 1;
+      background: rgba(0, 0, 0, 0.65);
+      color: #fff;
+    }
+
+    .face-item {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      background: #fafcff;
+      cursor: pointer;
+    }
+    .face-item:hover { border-color: #c4d7ff; background: #f5f9ff; }
+    .small { font-size: 12px; color: var(--muted); }
+
+    .manage-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-end;
+      margin-bottom: 14px;
+    }
+    .manage-field { flex: 1 1 160px; min-width: 120px; }
+    .manage-field.manage-field-search { flex: 2 1 220px; }
+    .manage-hint {
+      width: 100%;
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: -4px;
+    }
+
+    .person-info-section { padding-bottom: 8px; }
+    .person-info-heading {
+      margin: 0 0 16px;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .person-info-root {
+      min-height: 120px;
+    }
+    .person-info-empty {
+      font-size: 16px;
+      color: var(--muted);
+      line-height: 1.6;
+      padding: 8px 0;
+    }
+    .person-info-card {
+      display: flex;
+      gap: 28px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      padding: 22px 24px;
+      background: linear-gradient(135deg, #f6f9ff 0%, #f8fafc 50%, #f2faf7 100%);
+      border-radius: 16px;
+      border: 1px solid var(--line);
+    }
+    .person-info-photo-wrap {
+      flex-shrink: 0;
+    }
+    .person-info-photo {
+      width: 168px;
+      height: 168px;
+      border-radius: 14px;
+      object-fit: cover;
+      border: 2px solid #e0e8f5;
+      box-shadow: 0 8px 24px rgba(31, 51, 87, 0.1);
+      cursor: zoom-in;
+    }
+    .person-info-details { flex: 1; min-width: 220px; }
+    .person-info-name {
+      margin: 0 0 16px;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.02em;
+    }
+    .person-info-row {
+      font-size: 17px;
+      line-height: 1.85;
+      color: #3d4d66;
+      margin-bottom: 6px;
+    }
+    .person-info-row strong {
+      color: var(--muted);
+      font-weight: 600;
+      margin-right: 8px;
+      font-size: 15px;
+    }
+
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { padding: 12px; }
+      .brand { margin-bottom: 12px; }
+      .tabs { display: flex; gap: 8px; }
+      .tab-btn { margin: 0; text-align: center; }
+      .main { padding: 14px; }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">人脸识别系统</div>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="enrollTab">人脸录入</button>
+        <button class="tab-btn" data-tab="manageTab">数据管理</button>
+        <button class="tab-btn" data-tab="recognizeTab">人脸识别</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section id="enrollTab">
+        <h2 class="title">人脸录入</h2>
+        <div class="panel grid-2">
+          <div>
+            <div class="form-row">
+              <label>姓名</label>
+              <input id="enrollName" placeholder="请输入姓名" />
+            </div>
+            <div class="form-row">
+              <label>性别</label>
+              <select id="enrollGender">
+                <option value="男">男</option>
+                <option value="女">女</option>
+                <option value="其他">其他</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>班级</label>
+              <input id="enrollClass" placeholder="例如：计科1班" />
+            </div>
+            <div class="form-row">
+              <label>上传照片</label>
+              <input id="enrollFile" type="file" accept="image/*" />
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-secondary" id="openEnrollCameraBtn">打开摄像头</button>
+              <button class="btn btn-secondary" id="closeEnrollCameraBtn">关闭摄像头</button>
+              <button class="btn btn-secondary" id="captureEnrollBtn">拍照</button>
+              <button class="btn btn-primary" id="submitEnrollBtn">提交录入</button>
+            </div>
+            <div id="enrollMsg" class="message hidden"></div>
+          </div>
+          <div>
+            <p class="sub-title">摄像头拍照 / 预览</p>
+            <div class="form-row">
+              <label for="enrollCameraSelect">选择摄像头</label>
+              <select id="enrollCameraSelect"></select>
+            </div>
+            <div class="camera-wrap">
+              <video id="enrollVideo" autoplay playsinline muted></video>
+            </div>
+            <canvas id="enrollCaptureCanvas" class="hidden"></canvas>
+            <p class="sub-title" style="margin-top:12px;">当前待录入图片</p>
+            <img id="enrollPreview" class="preview-img hidden" alt="preview" />
+          </div>
+        </div>
+      </section>
+
+      <section id="manageTab" class="hidden">
+        <h2 class="title">数据管理</h2>
+        <div class="panel">
+          <div class="manage-toolbar">
+            <div class="form-row manage-field manage-field-search">
+              <label>查询</label>
+              <input id="manageSearch" type="search" placeholder="按姓名或班级关键词搜索" autocomplete="off" />
+            </div>
+            <div class="form-row manage-field">
+              <label>筛选 · 性别</label>
+              <select id="manageGenderFilter">
+                <option value="all">全部</option>
+                <option value="男">男</option>
+                <option value="女">女</option>
+                <option value="其他">其他</option>
+              </select>
+            </div>
+            <div class="form-row manage-field">
+              <label>排序</label>
+              <select id="manageSort">
+                <option value="time_desc">录入时间 · 新→旧</option>
+                <option value="time_asc">录入时间 · 旧→新</option>
+                <option value="name_asc">姓名 · A→Z</option>
+                <option value="name_desc">姓名 · Z→A</option>
+                <option value="class_asc">班级 · A→Z</option>
+                <option value="class_desc">班级 · Z→A</option>
+              </select>
+            </div>
+            <div class="form-row manage-field" style="flex:0 0 auto;">
+              <label style="visibility:hidden;">操作</label>
+              <div class="btn-group">
+                <button class="btn btn-primary" id="reloadUsersBtn">刷新</button>
+                <button class="btn btn-danger" id="deleteAllUsersBtn">删除全部</button>
+              </div>
+            </div>
+          </div>
+          <p id="manageCountHint" class="manage-hint"></p>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>头像</th><th>姓名</th><th>性别</th><th>班级</th><th>录入时间</th><th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="usersTbody"></tbody>
+            </table>
+          </div>
+          <div id="manageMsg" class="message hidden"></div>
+        </div>
+      </section>
+
+      <section id="recognizeTab" class="hidden">
+        <h2 class="title">人脸识别</h2>
+        <div class="panel grid-2">
+          <div>
+            <p class="sub-title">上传照片识别</p>
+            <div class="form-row">
+              <input id="recognizeFile" type="file" accept="image/*" />
+            </div>
+            <button class="btn btn-primary" id="recognizeImageBtn">开始识别</button>
+            <div id="recognizeMsg" class="message hidden"></div>
+            <div id="imageFaceResult" style="margin-top:10px;"></div>
+          </div>
+
+          <div>
+            <p class="sub-title">摄像头实时识别（WebSocket）</p>
+            <div class="form-row">
+              <label for="realtimeCameraSelect">选择摄像头</label>
+              <select id="realtimeCameraSelect"></select>
+            </div>
+            <div class="camera-wrap">
+              <video id="realtimeVideo" autoplay playsinline muted></video>
+              <canvas id="realtimeOverlay" class="overlay"></canvas>
+            </div>
+            <div class="btn-group" style="margin-top:10px;">
+              <button class="btn btn-secondary" id="startRealtimeBtn">开启实时识别</button>
+              <button class="btn btn-secondary" id="stopRealtimeBtn">停止实时识别</button>
+            </div>
+            <div id="realtimeMsg" class="message hidden"></div>
+            <div id="realtimeFaces" style="margin-top:10px;"></div>
+          </div>
+        </div>
+
+        <div class="panel person-info-section">
+          <h3 class="person-info-heading">人物信息</h3>
+          <div id="personInfo" class="person-info-root person-info-empty">点击识别结果中的人物可查看详情。</div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <div id="imageModal" class="image-modal hidden">
+    <div class="image-modal-content">
+      <button id="imageModalClose" class="image-modal-close" title="关闭">×</button>
+      <img id="imageModalImg" alt="头像预览" />
+    </div>
+  </div>
+
+  <script>
+    const currentHttpOrigin = window.location.origin && window.location.origin.startsWith("http")
+      ? window.location.origin
+      : "http://127.0.0.1:8000";
+    const API_BASE = currentHttpOrigin;
+    const WS_BASE = `${currentHttpOrigin.replace(/^http/, "ws")}/ws/recognize`;
+
+    const state = {
+      enrollPhotoBlob: null,
+      enrollPreviewObjectUrl: null,
+      enrollStream: null,
+      realtimeStream: null,
+      preferredCameraId: null,
+      ws: null,
+      realtimeTimer: null,
+      realtimeAwaitingResponse: false,
+      users: [],
+      latestRealtimeFaces: [],
+    };
+
+    let currentTabId = "enrollTab";
+
+    function revokeEnrollPreviewObjectUrl() {
+      if (state.enrollPreviewObjectUrl) {
+        URL.revokeObjectURL(state.enrollPreviewObjectUrl);
+        state.enrollPreviewObjectUrl = null;
+      }
+    }
+
+    function esc(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function escAttr(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;");
+    }
+
+    function showMessage(el, text, ok = true) {
+      el.classList.remove("hidden", "msg-ok", "msg-err");
+      el.classList.add(ok ? "msg-ok" : "msg-err");
+      el.textContent = text;
+    }
+
+    function hideMessage(el) {
+      el.classList.add("hidden");
+    }
+
+    function resetEnrollTabContent() {
+      resetEnrollForm();
+      hideMessage(document.getElementById("enrollMsg"));
+    }
+
+    function resetManageTabContent() {
+      const search = document.getElementById("manageSearch");
+      const gender = document.getElementById("manageGenderFilter");
+      const sort = document.getElementById("manageSort");
+      if (search) search.value = "";
+      if (gender) gender.value = "all";
+      if (sort) sort.value = "time_desc";
+      hideMessage(document.getElementById("manageMsg"));
+      renderManageTable();
+    }
+
+    function resetRecognizeTabContent() {
+      stopRealtime();
+      const rFile = document.getElementById("recognizeFile");
+      if (rFile) rFile.value = "";
+      const imgRes = document.getElementById("imageFaceResult");
+      if (imgRes) imgRes.innerHTML = "";
+      const rtFaces = document.getElementById("realtimeFaces");
+      if (rtFaces) rtFaces.innerHTML = "";
+      hideMessage(document.getElementById("recognizeMsg"));
+      hideMessage(document.getElementById("realtimeMsg"));
+      const panel = document.getElementById("personInfo");
+      if (panel) {
+        panel.className = "person-info-root person-info-empty";
+        panel.textContent = "点击识别结果中的人物可查看详情。";
+      }
+      const canvas = document.getElementById("realtimeOverlay");
+      if (canvas) {
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width || 0, canvas.height || 0);
+      }
+      const video = document.getElementById("realtimeVideo");
+      if (video) video.srcObject = null;
+    }
+
+    function switchTab(tabId) {
+      if (currentTabId !== tabId) {
+        if (currentTabId === "enrollTab") resetEnrollTabContent();
+        else if (currentTabId === "manageTab") resetManageTabContent();
+        else if (currentTabId === "recognizeTab") resetRecognizeTabContent();
+      }
+      if (tabId !== "enrollTab") stopEnrollCamera();
+      if (tabId !== "recognizeTab") stopRealtime();
+      document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.tab === tabId);
+      });
+      ["enrollTab", "manageTab", "recognizeTab"].forEach(id => {
+        document.getElementById(id).classList.toggle("hidden", id !== tabId);
+      });
+      currentTabId = tabId;
+      if (tabId === "manageTab") loadUsers();
+      if (tabId === "enrollTab" || tabId === "recognizeTab") populateCameraSelects();
+    }
+
+    async function apiFetch(url, options = {}) {
+      const resp = await fetch(`${API_BASE}${url}`, options);
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(data.error || data.detail || "请求失败");
+      return data;
+    }
+
+    function stopStream(stream) {
+      if (!stream) return;
+      stream.getTracks().forEach(t => t.stop());
+    }
+
+    function getBuiltinCamera(devices) {
+      const score = device => {
+        const label = (device.label || "").toLowerCase();
+        let s = 0;
+        if (/(integrated|internal|built-?in|laptop)/.test(label)) s += 5;
+        if (/(front|user|rgb|webcam|camera)/.test(label)) s += 2;
+        if (/(virtual|obs|droidcam|epoccam|snap|manycam)/.test(label)) s -= 5;
+        return s;
+      };
+      return [...devices].sort((a, b) => score(b) - score(a))[0] || null;
+    }
+
+    async function getPreferredVideoConstraints() {
+      const base = { width: 640, height: 480 };
+      if (state.preferredCameraId) {
+        return { ...base, deviceId: { exact: state.preferredCameraId } };
+      }
+      let tempStream = null;
+      try {
+        tempStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoInputs = devices.filter(d => d.kind === "videoinput");
+        const preferred = getBuiltinCamera(videoInputs);
+        if (preferred && preferred.deviceId) state.preferredCameraId = preferred.deviceId;
+      } finally {
+        stopStream(tempStream);
+      }
+      if (state.preferredCameraId) {
+        return { ...base, deviceId: { exact: state.preferredCameraId } };
+      }
+      return { ...base, facingMode: "user" };
+    }
+
+    async function ensureCameraLabelsPermission() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+      try {
+        const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        s.getTracks().forEach(t => t.stop());
+      } catch (e) {
+        /* 用户拒绝或设备不可用 */
+      }
+    }
+
+    async function populateCameraSelects() {
+      const enrollSel = document.getElementById("enrollCameraSelect");
+      const rtSel = document.getElementById("realtimeCameraSelect");
+      if (!enrollSel || !rtSel) return;
+      const prevE = enrollSel.value;
+      const prevR = rtSel.value;
+      await ensureCameraLabelsPermission();
+      let devices = [];
+      try {
+        devices = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === "videoinput");
+      } catch (e) {
+        return;
+      }
+      const optionsHtml = [
+        `<option value="">${esc("自动（优先内置摄像头）")}</option>`,
+        ...devices.map((d, i) => {
+          const label = d.label || `摄像头 ${i + 1}`;
+          return `<option value="${escAttr(d.deviceId)}">${esc(label)}</option>`;
+        }),
+      ].join("");
+      enrollSel.innerHTML = optionsHtml;
+      rtSel.innerHTML = optionsHtml;
+      if (prevE && [...enrollSel.options].some(o => o.value === prevE)) enrollSel.value = prevE;
+      if (prevR && [...rtSel.options].some(o => o.value === prevR)) rtSel.value = prevR;
+    }
+
+    async function getVideoConstraintsFromSelect(selectEl) {
+      const base = { width: 640, height: 480 };
+      if (selectEl && selectEl.value) {
+        return { ...base, deviceId: { exact: selectEl.value } };
+      }
+      return await getPreferredVideoConstraints();
+    }
+
+    async function openEnrollCamera() {
+      const video = document.getElementById("enrollVideo");
+      stopEnrollCamera();
+      const sel = document.getElementById("enrollCameraSelect");
+      const constraints = await getVideoConstraintsFromSelect(sel);
+      state.enrollStream = await navigator.mediaDevices.getUserMedia({ video: constraints, audio: false });
+      video.srcObject = state.enrollStream;
+    }
+
+    function stopEnrollCamera() {
+      const video = document.getElementById("enrollVideo");
+      stopStream(state.enrollStream);
+      state.enrollStream = null;
+      if (video) video.srcObject = null;
+    }
+
+    function resetEnrollForm() {
+      revokeEnrollPreviewObjectUrl();
+      document.getElementById("enrollName").value = "";
+      document.getElementById("enrollGender").value = "男";
+      document.getElementById("enrollClass").value = "";
+      document.getElementById("enrollFile").value = "";
+      state.enrollPhotoBlob = null;
+      const preview = document.getElementById("enrollPreview");
+      preview.src = "";
+      preview.classList.add("hidden");
+    }
+
+    function captureEnrollPhoto() {
+      const video = document.getElementById("enrollVideo");
+      if (!video.videoWidth) throw new Error("摄像头尚未准备好");
+      revokeEnrollPreviewObjectUrl();
+      document.getElementById("enrollFile").value = "";
+      const canvas = document.getElementById("enrollCaptureCanvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext("2d").drawImage(video, 0, 0);
+      canvas.toBlob(blob => {
+        state.enrollPhotoBlob = blob;
+        const url = URL.createObjectURL(blob);
+        state.enrollPreviewObjectUrl = url;
+        const preview = document.getElementById("enrollPreview");
+        preview.src = url;
+        preview.classList.remove("hidden");
+      }, "image/jpeg", 0.95);
+    }
+
+    async function submitEnroll() {
+      const msg = document.getElementById("enrollMsg");
+      hideMessage(msg);
+      const name = document.getElementById("enrollName").value.trim();
+      const gender = document.getElementById("enrollGender").value;
+      const className = document.getElementById("enrollClass").value.trim();
+      const uploadFile = document.getElementById("enrollFile").files[0];
+      const useBlob = state.enrollPhotoBlob;
+      if (!name || !className) {
+        showMessage(msg, "姓名和班级不能为空", false);
+        return;
+      }
+      if (!uploadFile && !useBlob) {
+        showMessage(msg, "请上传图片或使用摄像头拍照", false);
+        return;
+      }
+      const form = new FormData();
+      form.append("name", name);
+      form.append("gender", gender);
+      form.append("class_name", className);
+      if (uploadFile) form.append("file", uploadFile);
+      else form.append("file", useBlob, "capture.jpg");
+
+      try {
+        const data = await apiFetch("/api/enroll", { method: "POST", body: form });
+        showMessage(msg, `录入成功：${data.user.name}（${data.user.class_name}）`);
+        resetEnrollForm();
+        await loadUsers();
+      } catch (e) {
+        showMessage(msg, `录入失败：${e.message}`, false);
+      }
+    }
+
+    function getFilteredSortedUsers() {
+      let list = [...(state.users || [])];
+      const q = (document.getElementById("manageSearch")?.value || "").trim().toLowerCase();
+      const g = document.getElementById("manageGenderFilter")?.value || "all";
+      const sort = document.getElementById("manageSort")?.value || "time_desc";
+      if (q) {
+        list = list.filter(
+          u =>
+            (u.name || "").toLowerCase().includes(q) ||
+            (u.class_name || "").toLowerCase().includes(q)
+        );
+      }
+      if (g !== "all") list = list.filter(u => u.gender === g);
+      const cmpTime = (a, b) => (a.enroll_time || "").localeCompare(b.enroll_time || "");
+      if (sort === "time_desc") list.sort((a, b) => -cmpTime(a, b));
+      else if (sort === "time_asc") list.sort(cmpTime);
+      else if (sort === "name_asc") {
+        list.sort((a, b) => (a.name || "").localeCompare(b.name || "", "zh-CN"));
+      } else if (sort === "name_desc") {
+        list.sort((a, b) => (b.name || "").localeCompare(a.name || "", "zh-CN"));
+      } else if (sort === "class_asc") {
+        list.sort((a, b) => (a.class_name || "").localeCompare(b.class_name || "", "zh-CN"));
+      } else if (sort === "class_desc") {
+        list.sort((a, b) => (b.class_name || "").localeCompare(a.class_name || "", "zh-CN"));
+      }
+      return list;
+    }
+
+    function renderManageTable() {
+      const tbody = document.getElementById("usersTbody");
+      const hint = document.getElementById("manageCountHint");
+      if (!tbody) return;
+      const total = (state.users || []).length;
+      if (total === 0) {
+        tbody.innerHTML = "<tr><td colspan='6' class='small'>暂无数据</td></tr>";
+        if (hint) hint.textContent = "共 0 条";
+        return;
+      }
+      const list = getFilteredSortedUsers();
+      if (hint) {
+        hint.textContent =
+          list.length === total
+            ? `共 ${total} 条`
+            : `共 ${total} 条，当前筛选显示 ${list.length} 条`;
+      }
+      if (!list.length) {
+        tbody.innerHTML =
+          "<tr><td colspan='6' class='small'>没有符合当前查询或筛选条件的数据</td></tr>";
+        return;
+      }
+      tbody.innerHTML = list
+        .map(
+          user => `
+          <tr>
+            <td><img class="avatar clickable" src="${API_BASE}${user.image_url}" alt="avatar" onclick='openImageModal(${JSON.stringify(API_BASE + user.image_url)})' /></td>
+            <td><input id="name-${user.id}" value="${escAttr(user.name)}" /></td>
+            <td>
+              <select id="gender-${user.id}">
+                <option value="男" ${user.gender === "男" ? "selected" : ""}>男</option>
+                <option value="女" ${user.gender === "女" ? "selected" : ""}>女</option>
+                <option value="其他" ${user.gender === "其他" ? "selected" : ""}>其他</option>
+              </select>
+            </td>
+            <td><input id="class-${user.id}" value="${escAttr(user.class_name)}" /></td>
+            <td>${esc(user.enroll_time)}</td>
+            <td>
+              <div class="btn-group">
+                <button class="btn btn-secondary" onclick="updateUser(${user.id})">保存</button>
+                <button class="btn btn-danger" onclick="deleteUser(${user.id})">删除</button>
+              </div>
+            </td>
+          </tr>
+        `
+        )
+        .join("");
+    }
+
+    async function loadUsers() {
+      const tbody = document.getElementById("usersTbody");
+      const msg = document.getElementById("manageMsg");
+      const hint = document.getElementById("manageCountHint");
+      hideMessage(msg);
+      tbody.innerHTML = "<tr><td colspan='6' class='small'>加载中...</td></tr>";
+      try {
+        const data = await apiFetch("/api/users");
+        state.users = data.users;
+        renderManageTable();
+      } catch (e) {
+        state.users = [];
+        tbody.innerHTML = "";
+        if (hint) hint.textContent = "";
+        showMessage(msg, `加载失败：${e.message}`, false);
+      }
+    }
+
+    async function deleteAllUsers() {
+      const msg = document.getElementById("manageMsg");
+      hideMessage(msg);
+      const total = (state.users || []).length;
+      if (!total) {
+        showMessage(msg, "当前没有可删除的数据", false);
+        return;
+      }
+      if (!confirm(`确定删除全部 ${total} 条人员数据吗？此操作不可恢复。`)) return;
+      if (!confirm("再次确认：将清空人脸库并删除所有存档照片。")) return;
+      try {
+        await apiFetch("/api/users/all", { method: "DELETE" });
+        showMessage(msg, "已全部删除");
+        await loadUsers();
+      } catch (e) {
+        showMessage(msg, `删除失败：${e.message}`, false);
+      }
+    }
+
+    async function updateUser(userId) {
+      const msg = document.getElementById("manageMsg");
+      hideMessage(msg);
+      const form = new FormData();
+      form.append("name", document.getElementById(`name-${userId}`).value.trim());
+      form.append("gender", document.getElementById(`gender-${userId}`).value);
+      form.append("class_name", document.getElementById(`class-${userId}`).value.trim());
+      try {
+        await apiFetch(`/api/users/${userId}`, { method: "PUT", body: form });
+        showMessage(msg, "更新成功");
+        loadUsers();
+      } catch (e) {
+        showMessage(msg, `更新失败：${e.message}`, false);
+      }
+    }
+
+    async function deleteUser(userId) {
+      const msg = document.getElementById("manageMsg");
+      hideMessage(msg);
+      if (!confirm("确认删除该人员信息吗？")) return;
+      try {
+        await apiFetch(`/api/users/${userId}`, { method: "DELETE" });
+        showMessage(msg, "删除成功");
+        loadUsers();
+      } catch (e) {
+        showMessage(msg, `删除失败：${e.message}`, false);
+      }
+    }
+
+    function drawFaces(canvas, faces, srcW, srcH) {
+      const video = document.getElementById("realtimeVideo");
+      const rect = video.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.max(1, Math.round(rect.width * dpr));
+      canvas.height = Math.max(1, Math.round(rect.height * dpr));
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (!srcW || !srcH) return;
+
+      const viewW = rect.width;
+      const viewH = rect.height;
+      const scale = Math.min(viewW / srcW, viewH / srcH);
+      const drawW = srcW * scale;
+      const drawH = srcH * scale;
+      const offsetX = (viewW - drawW) / 2;
+      const offsetY = (viewH - drawH) / 2;
+
+      ctx.strokeStyle = "#2d6cff";
+      ctx.lineWidth = 2;
+      ctx.font = "14px sans-serif";
+      ctx.fillStyle = "#2d6cff";
+      faces.forEach(f => {
+        const b = f.bbox;
+        const x = offsetX + b.left * scale;
+        const y = offsetY + b.top * scale;
+        const w = (b.right - b.left) * scale;
+        const h = (b.bottom - b.top) * scale;
+        ctx.strokeRect(x, y, w, h);
+        ctx.fillText(f.name || "未知", x + 4, Math.max(14, y - 6));
+      });
+    }
+
+    async function recognizeImage() {
+      const file = document.getElementById("recognizeFile").files[0];
+      const msg = document.getElementById("recognizeMsg");
+      const resultEl = document.getElementById("imageFaceResult");
+      hideMessage(msg);
+      resultEl.innerHTML = "";
+      if (!file) {
+        showMessage(msg, "请先选择图片", false);
+        return;
+      }
+      const form = new FormData();
+      form.append("file", file);
+      try {
+        const data = await apiFetch("/api/recognize/image", { method: "POST", body: form });
+        showMessage(msg, `识别完成，共检测到 ${data.count} 张人脸`);
+        if (!data.faces.length) return;
+        resultEl.innerHTML = data.faces.map(face => `
+          <div class="face-item" onclick="showPersonInfo(${face.user_id ?? "null"})">
+            <div><strong>${face.name}</strong></div>
+            <div class="small">距离: ${face.distance == null ? "N/A" : face.distance.toFixed(4)}</div>
+          </div>
+        `).join("");
+      } catch (e) {
+        showMessage(msg, `识别失败：${e.message}`, false);
+      }
+    }
+
+    async function showPersonInfo(userId) {
+      const panel = document.getElementById("personInfo");
+      if (!userId) {
+        panel.className = "person-info-root person-info-empty";
+        panel.textContent = "该人脸未命中已录入人员。";
+        return;
+      }
+      try {
+        const data = await apiFetch(`/api/users/${userId}`);
+        const u = data.user;
+        const imgSrc = `${API_BASE}${u.image_url}`;
+        panel.className = "person-info-root";
+        panel.innerHTML = `
+          <div class="person-info-card">
+            <div class="person-info-photo-wrap">
+              <img class="person-info-photo" src="${esc(imgSrc)}" alt="${esc(u.name)}" onclick='openImageModal(${JSON.stringify(imgSrc)})' />
+            </div>
+            <div class="person-info-details">
+              <h4 class="person-info-name">${esc(u.name)}</h4>
+              <div class="person-info-row"><strong>性别</strong>${esc(u.gender)}</div>
+              <div class="person-info-row"><strong>班级</strong>${esc(u.class_name)}</div>
+              <div class="person-info-row"><strong>录入时间</strong>${esc(u.enroll_time)}</div>
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        panel.className = "person-info-root person-info-empty";
+        panel.textContent = `加载人物信息失败：${e.message}`;
+      }
+    }
+
+    async function startRealtime() {
+      const msg = document.getElementById("realtimeMsg");
+      hideMessage(msg);
+      const video = document.getElementById("realtimeVideo");
+      const canvas = document.getElementById("realtimeOverlay");
+
+      stopEnrollCamera();
+      if (state.realtimeStream) stopRealtime();
+      const rtSel = document.getElementById("realtimeCameraSelect");
+      const constraints = await getVideoConstraintsFromSelect(rtSel);
+      state.realtimeStream = await navigator.mediaDevices.getUserMedia({ video: constraints, audio: false });
+      video.srcObject = state.realtimeStream;
+
+      state.ws = new WebSocket(WS_BASE);
+      state.ws.binaryType = "arraybuffer";
+      state.ws.onmessage = async (event) => {
+        state.realtimeAwaitingResponse = false;
+        const data = JSON.parse(event.data);
+        if (data.error) {
+          showMessage(msg, data.error, false);
+          return;
+        }
+        state.latestRealtimeFaces = data.faces || [];
+        drawFaces(canvas, state.latestRealtimeFaces, video.videoWidth, video.videoHeight);
+        const list = document.getElementById("realtimeFaces");
+        list.innerHTML = state.latestRealtimeFaces.map(face => `
+          <div class="face-item" onclick="showPersonInfo(${face.user_id ?? "null"})">
+            <div><strong>${face.name}</strong></div>
+            <div class="small">distance: ${face.distance == null ? "N/A" : face.distance.toFixed(4)}</div>
+          </div>
+        `).join("") || "<div class='small'>未检测到人脸</div>";
+      };
+      state.ws.onopen = () => {
+        state.realtimeAwaitingResponse = false;
+        showMessage(msg, "实时识别连接已建立");
+      };
+      state.ws.onclose = (event) => {
+        state.realtimeAwaitingResponse = false;
+        showMessage(msg, `实时识别连接已关闭（code: ${event.code}${event.reason ? `, reason: ${event.reason}` : ""}）`, false);
+      };
+      state.ws.onerror = () => showMessage(msg, "实时识别连接异常", false);
+
+      const senderCanvas = document.createElement("canvas");
+      const senderCtx = senderCanvas.getContext("2d");
+      state.realtimeTimer = setInterval(() => {
+        if (!state.ws || state.ws.readyState !== WebSocket.OPEN) return;
+        if (state.realtimeAwaitingResponse) return;
+        if (!video.videoWidth || !video.videoHeight) return;
+        senderCanvas.width = video.videoWidth;
+        senderCanvas.height = video.videoHeight;
+        senderCtx.drawImage(video, 0, 0);
+        senderCanvas.toBlob(blob => {
+          if (blob && state.ws && state.ws.readyState === WebSocket.OPEN) {
+            state.realtimeAwaitingResponse = true;
+            state.ws.send(blob);
+          }
+        }, "image/jpeg", 0.65);
+      }, 120);
+    }
+
+    function stopRealtime() {
+      if (state.realtimeTimer) {
+        clearInterval(state.realtimeTimer);
+        state.realtimeTimer = null;
+      }
+      if (state.ws) {
+        state.ws.close();
+        state.ws = null;
+      }
+      stopStream(state.realtimeStream);
+      state.realtimeStream = null;
+      state.realtimeAwaitingResponse = false;
+      const video = document.getElementById("realtimeVideo");
+      if (video) video.srcObject = null;
+      const canvas = document.getElementById("realtimeOverlay");
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function openImageModal(src) {
+      const modal = document.getElementById("imageModal");
+      const img = document.getElementById("imageModalImg");
+      img.src = src;
+      modal.classList.remove("hidden");
+    }
+
+    function closeImageModal() {
+      const modal = document.getElementById("imageModal");
+      const img = document.getElementById("imageModalImg");
+      modal.classList.add("hidden");
+      img.src = "";
+    }
+
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+    });
+    document.getElementById("openEnrollCameraBtn").addEventListener("click", async () => {
+      try {
+        await openEnrollCamera();
+      } catch (e) {
+        showMessage(document.getElementById("enrollMsg"), `打开摄像头失败：${e.message}`, false);
+      }
+    });
+    document.getElementById("closeEnrollCameraBtn").addEventListener("click", () => {
+      stopEnrollCamera();
+    });
+    document.getElementById("captureEnrollBtn").addEventListener("click", () => {
+      try {
+        captureEnrollPhoto();
+      } catch (e) {
+        showMessage(document.getElementById("enrollMsg"), e.message, false);
+      }
+    });
+    document.getElementById("enrollFile").addEventListener("change", () => {
+      revokeEnrollPreviewObjectUrl();
+      state.enrollPhotoBlob = null;
+      const input = document.getElementById("enrollFile");
+      const preview = document.getElementById("enrollPreview");
+      const file = input.files[0];
+      if (!file) {
+        preview.src = "";
+        preview.classList.add("hidden");
+        return;
+      }
+      const url = URL.createObjectURL(file);
+      state.enrollPreviewObjectUrl = url;
+      preview.src = url;
+      preview.classList.remove("hidden");
+    });
+    document.getElementById("submitEnrollBtn").addEventListener("click", submitEnroll);
+    document.getElementById("enrollCameraSelect").addEventListener("change", () => {
+      if (state.enrollStream) {
+        openEnrollCamera().catch(e => {
+          showMessage(document.getElementById("enrollMsg"), `切换摄像头失败：${e.message}`, false);
+        });
+      }
+    });
+    document.getElementById("realtimeCameraSelect").addEventListener("change", async () => {
+      if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+        try {
+          await stopRealtime();
+          await startRealtime();
+        } catch (e) {
+          showMessage(document.getElementById("realtimeMsg"), `切换摄像头失败：${e.message}`, false);
+        }
+      }
+    });
+    document.getElementById("reloadUsersBtn").addEventListener("click", loadUsers);
+    document.getElementById("manageSearch").addEventListener("input", () => renderManageTable());
+    document.getElementById("manageGenderFilter").addEventListener("change", () => renderManageTable());
+    document.getElementById("manageSort").addEventListener("change", () => renderManageTable());
+    document.getElementById("deleteAllUsersBtn").addEventListener("click", deleteAllUsers);
+    document.getElementById("recognizeImageBtn").addEventListener("click", recognizeImage);
+    document.getElementById("startRealtimeBtn").addEventListener("click", async () => {
+      try {
+        await startRealtime();
+      } catch (e) {
+        showMessage(document.getElementById("realtimeMsg"), `启动失败：${e.message}`, false);
+      }
+    });
+    document.getElementById("stopRealtimeBtn").addEventListener("click", stopRealtime);
+    document.getElementById("imageModalClose").addEventListener("click", closeImageModal);
+    document.getElementById("imageModal").addEventListener("click", (e) => {
+      if (e.target.id === "imageModal") closeImageModal();
+    });
+    window.updateUser = updateUser;
+    window.deleteUser = deleteUser;
+    window.showPersonInfo = showPersonInfo;
+    window.openImageModal = openImageModal;
+
+    loadUsers();
+    populateCameraSelects();
+  </script>
+</body>
+</html>
